@@ -1,2 +1,112 @@
 Spring
 What's the difference between Resource annotations and Autowired annotations?
+1. @Resource is a JDK native annotation, and @Autowired is a Spring2.5 introduced annotation
+2. @Resource has two attributes name and type. Spring resolves the name attribute of the @Resource annotation to the bean's name, and the type attribute to the bean's type. So if the name attribute is used, the byName auto-injection policy is used, and if the type attribute is used, the byType auto-injection policy is used. If neither name nor type attribute is specified, the policy is automatically injected using byName through the reflection mechanism.
+3.By default, @Autowired matches beans by byType first. If multiple beans are found, the beans are matched by byName. If there are more beans, an exception is reported.@Autowired if byName is to be used, @Qualifier must be used together
+
+Spring Boot的启动流程大致如下：
+1.Launch entry: The application starts with the main method, usually in a main class with the @SpringBootApplication annotation. This annotation includes functionality for @Configuration, @EnableAutoConfiguration, and @ComponentScan.				
+2.Creating an application context: The SpringApplication.run() method starts the application by creating a SpringApplication instance and initializing the application context.
+3.Loading automatic configuration: @EnableAutoConfiguration triggers the automatic configuration mechanism of Spring Boot and uses the META-INF/spring.factories file to load automatic configuration classes.
+4.Scan components: @ComponentScan instructs Spring to scan components in the specified package and automatically discover and register beans such as @Component, @Service, and @Repository.
+5.Create beans: The Spring container creates and initializes all required beans and injects dependencies from components that are automatically configured and scanned.
+6.Start the embedded server: For Web applications, Spring Boot starts the embedded Web server (such as Tomcat, Jetty) and deploys the application.
+7.Execute application logic: After the application is started, Spring Boot executes the logic in the application, such as starting some scheduled tasks or initializing data.
+8.Application ready: The application is started and ready to accept requests or process business logic.
+This process shows how Spring Boot simplifies application startup by automating configuration and component scanning.
+
+Spring's mechanism for solving circular dependencies?
+Steps to resolve circular dependencies
+1.Bean instantiation: Spring first attempts to instantiate the Bean, and if it finds that the dependency is not satisfied, puts the Bean's ObjectFactory into the three-level cache.
+2.Handling dependencies: If during the creation of a Bean it is found that the Bean it depends on is still being created (that is, in the second-level cache), Spring solves the dependency problem by obtaining an ObjectFactory from the third-level cache to create an instance of the Bean.
+3.Complete initialization: Once all dependencies are satisfied, Spring removes the Bean from the second-level cache and places it in the first-level cache, marking it as a fully initialized Bean.
+With this three-level caching mechanism, Spring effectively solves the problem of circular dependencies between beans, ensuring proper Bean creation and dependency injection.
+
+Reflection principle and application scenario
+Reflection principle:
+Java's reflection mechanism is implemented with the help of four classes: class, Constructor, Field, Method; Where class represents the time class object, Constructor- class constructor object, Field- class attribute object, Method- class method object. Through these four objects we can roughly see the various components of a class. How to get an instance of Class:
+Usage scenario:
+1. Develop common frameworks - The most important use of reflection is to develop common frameworks. Many frameworks (such as Spring) are configured (such as Javabeans, filters, etc., configured through XML files), in order to ensure the universality of the framework, you need to dynamically load different objects or classes and call different methods according to the runtime of the configuration file.
+2/ Dynamic proxy - In aspect programming (AOP), where specific methods need to be blocked, the dynamic proxy approach is usually chosen. At this time, reflection technology is needed to achieve.
+JDK: spring default dynamic proxy, need to implement the interface
+CGLIB: Serialized byte stream through asm framework, configurable, poor performance
+3. Custom annotation - annotation itself only plays a markup role, it needs to use reflection mechanism, according to annotation annotation to call annotation interpreter, perform behavior.
+4. Operate class attributes and methods with insufficient permissions
+
+Spring's transaction propagation mechanism defines how transaction methods behave among themselves, that is, how existing transactions should be handled when a method with a transaction is invoked. Spring controls the propagation of transactions through the Propagation attribute of the @Transactional annotation. Spring supports seven transaction propagation mechanisms:
+Example usage scenario:
+1.PROPAGATION_REQUIRED: The most common case, such as when a database is updated, you need to ensure that all updates are completed in a transaction.
+2.PROPAGATION_REQUIRES_NEW: When logging, you do not want the logging to be affected when the main transaction rolls back.
+3.PROPAGATION_NESTED: In a step operation, some operations are rolled back but the master operation transaction is retained.
+These propagation mechanisms provide flexible transaction control options to meet complex business needs and ensure data consistency and integrity. Choosing the right propagation mechanism allows you to determine how to manage transaction boundaries based on the needs of your business logic.
+
+spring transaction failure causes:
+1. The service itself catches the exception (try-catch)
+2 Non-public method
+3. The method is modified with final/static
+4. Invoke this class method
+5. Multi-threaded call
+6. Throw a checked exception
+7. A storage engine that does not support transactions is used
+
+How does spring MVC work?
+Process summary
+1.Client Request -> DispatcherServlet
+2.DispatcherServlet -> Search Handler (Handler Mapping)
+3.Handler Mapping -> Locating the Controller (Controller)
+4.Controller -> Processes the service logic
+5. Business Logic -> Return model and view name (ModelAndView)
+6.DispatcherServlet -> View Resolver
+7. View parsing -> Render view
+8. View -> Return a response to the client
+
+
+JVM（Java Virtual Machine）参数用于配置JVM的运行环境，优化性能、内存管理和调试。常用的JVM参数可以分为以下几类：内存管理、性能调优、垃圾回收、调试与监控等。以下是一些常用的JVM参数：
+1. 内存管理参数
+-Xms<size>：设置JVM初始堆内存大小。通常设置为与-Xmx相同的值，以避免堆内存动态调整带来的性能开销。
+-Xmx<size>：设置JVM最大堆内存大小。确定应用程序可以使用的最大内存量。
+-Xmn<size>：设置年轻代（Young Generation）内存大小。影响对象分配和垃圾回收频率。
+-XX:MetaspaceSize=<size>：设置Metaspace初始大小（用于存储类元数据）。
+-XX:MaxMetaspaceSize=<size>：设置Metaspace的最大大小。
+2. 垃圾回收参数
+-XX:+UseSerialGC：使用串行垃圾收集器，适用于单线程环境或较小的应用。
+-XX:+UseParallelGC：使用并行垃圾收集器，适合多核CPU环境。
+-XX:+UseConcMarkSweepGC（已废弃，建议用G1替代）：使用并发标记-清除垃圾收集器，适用于需要低延迟的应用。
+-XX:+UseG1GC：使用G1垃圾收集器，是现代JVM的默认垃圾收集器，适合大多数场景。
+-XX:MaxGCPauseMillis=<time>：设置G1垃圾收集器的最大暂停时间目标。
+-XX:InitiatingHeapOccupancyPercent=<percent>：设置触发垃圾回收的老年代占用率阈值（适用于G1）。
+3. 性能调优参数
+-XX:+AggressiveOpts：启用性能优化参数。
+-XX:+OptimizeStringConcat：优化字符串连接操作。
+-XX:+UseCompressedOops：在64位JVM上启用指针压缩，减少对象指针的内存占用。
+-XX:+HeapDumpOnOutOfMemoryError：在内存溢出时生成堆转储文件，帮助调试内存问题。
+4. 调试与监控参数
+-Xdebug：启用调试模式。
+-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=<port>：配置JVM调试模式，允许远程连接调试。
+-XX:+PrintGC：打印基本的GC信息。
+-XX:+PrintGCDetails：打印详细的GC信息，包括内存分配、回收详情。
+-XX:+PrintGCTimeStamps：打印GC的时间戳。
+-XX:+PrintHeapAtGC：在每次GC前后打印堆内存使用情况。
+-XX:ErrorFile=<file>：指定错误日志文件位置，当JVM崩溃时输出到该文件。
+5. 其他常用参数
+-Dproperty=value：设置系统属性，用于应用程序内的配置。
+-server 或 -client：选择JVM模式，-server模式适合服务器应用，提供更好的优化和性能，-client模式适合桌面应用。
+-XX:+DisableExplicitGC：禁用显示调用System.gc()进行垃圾回收，避免影响性能。
+这些参数可以根据应用程序的需求、运行环境和调优目标来组合使用，以达到最佳的性能和稳定性。在使用这些参数时，建议先进行测试和评估，以确定最适合的配置。
+
+Class.forName 和 ClassLoader 都用于在运行时加载类，但它们的使用方式和行为有一些重要的区别。以下是它们的区别：
+类的初始化：
+Class.forName：加载并初始化类。
+ClassLoader.loadClass：只加载类，不初始化。
+控制方式：
+Class.forName：直接使用，较少控制选项。
+ClassLoader：可以自定义类加载逻辑，提供更大的灵活性。
+使用场景：
+Class.forName：适合简单的动态加载场景，尤其是需要立即使用类的静态方法或变量时。
+ClassLoader：适合复杂的场景，如实现自定义类加载器、模块化系统或需要精细控制类加载过程的情况。
+
+如何实现跨域？
+实现跨域有以下几种方案：
+服务器端运行跨域 设置 CORS 等于 *；
+在单个接口使用注解 @CrossOrigin 运行跨域；
+使用 jsonp 跨域；
